@@ -2,7 +2,7 @@
 # Time    : 2019/3/20 23:20
 # Author  : LiaoKong
 
-from http import HTTP
+from Http import HTTP
 
 
 class YuShuBook:

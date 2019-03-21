@@ -4,7 +4,7 @@
 from flask import jsonify, Blueprint
 
 from YuShuBook import YuShuBook
-from helper import is_isbn_or_key
+from Helper import is_isbn_or_key
 
 web = Blueprint("web", __name__)
 
