@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 # Time    : 2019/3/20 23:36
 # Author  : LiaoKong
-from flask import jsonify, request
+
+import json
+
+from flask import jsonify, request, flash, render_template
 
 from app.Forms.Book import SearchForm
 
 from spider.YuShuBook import YuShuBook
 from libs.Helper import is_isbn_or_key
 from . import web
+from app.ViewModels.book import BookViewModel, BookCollection
 
 
 @web.route("/book/search")
@@ -19,6 +23,7 @@ def search():
     """
     # 验证层
     form = SearchForm(request.args)
+    books = BookCollection()
 
     if form.validate():
         q = form.q.data.strip()
@@ -26,12 +31,24 @@ def search():
 
         # print(request.args.to_dict())
         isbn_or_key = is_isbn_or_key(q)
-        if isbn_or_key == "isbn":
-            result = YuShuBook.search_by_isbn(q)
-        else:
-            result = YuShuBook.search_by_keyword(q, page)
 
-        # return json.dumps(result), 200, {"content-type": "application/json"}
-        return jsonify(result)
+        yushu_book = YuShuBook()
+        if isbn_or_key == "isbn":
+            yushu_book.search_by_isbn(q)
+
+        else:
+            yushu_book.search_by_keyword(q, page)
+
+        books.fill(yushu_book, q)
+        # return json.dumps(books, default=lambda o: o.__dict__)
+
     else:
-        return jsonify(form.errors)
+        flash("搜索关键字不符合要求，请重新输入关键字")
+        # return jsonify(form.errors)
+
+    return render_template("search_result.html", books=books)
+
+
+@web.route("/book/<isbn>/detail/")
+def book_detail(isbn):
+    pass

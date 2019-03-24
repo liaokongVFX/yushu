@@ -7,3 +7,8 @@ web = Blueprint("Web", __name__)
 
 from app.Web import book
 from app.Web import user
+from app.Web import auth
+from app.Web import drift
+from app.Web import gift
+from app.Web import main
+from app.Web import wish
