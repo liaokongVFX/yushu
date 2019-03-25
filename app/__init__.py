@@ -3,7 +3,7 @@
 # Author  : LiaoKong
 
 from flask import Flask
-from app.Models.book import db
+from app.Models.base import db
 
 
 def create_app():
