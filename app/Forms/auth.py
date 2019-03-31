@@ -3,7 +3,7 @@
 # Author  : LiaoKong
 
 from wtforms import Form, StringField, PasswordField
-from wtforms.validators import Length, NumberRange, DataRequired, ValidationError, Email
+from wtforms.validators import Length, NumberRange, DataRequired, ValidationError, Email, EqualTo
 
 from app.Models.user import User
 
@@ -22,6 +22,17 @@ class RegisterForm(Form):
             raise ValidationError('昵称已存在')
 
 
-class LoginForm(Form):
-    password = PasswordField('密码', validators=[DataRequired(), Length(6, 20)])
+class EmailForm(Form):
     email = StringField('电子邮件', validators=[DataRequired(), Length(1, 64), Email(message='电子邮箱不符合规范')])
+
+
+class LoginForm(EmailForm):
+    password = PasswordField('密码', validators=[DataRequired(), Length(6, 20)])
+
+
+class ResetPasswordForm(Form):
+    password1 = PasswordField(validators=[DataRequired(),
+                                          Length(6, 32, message="密码长度至少需要在6-32个字符之间"),
+                                          EqualTo("password2", message="两次输入的密码不同")])
+
+    password2 = PasswordField(validators=[DataRequired(), Length(6, 32)])

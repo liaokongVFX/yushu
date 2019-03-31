@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
 # Time    : 2019/3/25 22:37
 # Author  : LiaoKong
+from math import floor
 
+from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import Column, Integer, String, Boolean, Float
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
 from flask_login import UserMixin
 
-from app.Models.base import Base
+from app.Models.base import Base, db
 from app import login_manager
+from app.Models.drift import Drift
 from app.Models.gift import Gift
 from app.Models.wish import Wish
 from libs.Helper import is_isbn_or_key
+from libs.enums import PendingStatus
 from spider.YuShuBook import YuShuBook
 
 
@@ -35,6 +40,15 @@ class User(UserMixin, Base):
     @password.setter
     def password(self, raw):
         self._password = generate_password_hash(raw)
+
+    def can_send_gift(self):
+        if self.beans < 1:
+            return False
+
+        success_gifts_counts = Gift.query.filter_by(uid=self.id, launched=True).count()
+        success_receive_count = Drift.query.filter_by(requester_id=self.id, pending=PendingStatus.Success).count()
+
+        return True if floor(success_receive_count) / 2 <= floor(success_gifts_counts) else False
 
     def check_password(self, raw):
         return check_password_hash(self._password, raw)
@@ -60,6 +74,35 @@ class User(UserMixin, Base):
             return True
         else:
             return False
+
+    def generate_token(self, expiration=600):
+        s = Serializer(current_app.config["SECRET_KEY"], expiration)
+        return s.dumps({"id": self.id}).decode("utf-8")
+
+    @staticmethod
+    def reset_password(token, new_password):
+        s = Serializer(current_app.config["SECRET_KEY"])
+
+        try:
+            data = s.loads(token.encode("utf-8"))
+        except:
+            return False
+
+        uid = data.get("id")
+        with db.auto_commit():
+            user = User.query.get(uid)
+            user.password = new_password
+
+        return True
+
+    @property
+    def summary(self):
+        return dict(
+            nickname=self.nickname,
+            beans=self.beans,
+            email=self.email,
+            send_receive=str(self.send_counter) + "/" + str(self.receive_counter)
+        )
 
 
 @login_manager.user_loader
